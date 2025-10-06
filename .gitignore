@@ -1,0 +1,20 @@
+# Environnements virtuels
+scrap_env/
+venv/
+.env
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+
+# Fichiers de logs
+data/logs/
+*.log
+
+# Données
+data/scraped_data.json
+
+# IDE / OS
+.vscode/
+.DS_Store
+Thumbs.db
