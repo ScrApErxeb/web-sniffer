@@ -2,15 +2,17 @@ import requests
 from bs4 import BeautifulSoup
 from .base_scraper import BaseScraper
 
-class JeuneAfriqueCountryScraper(BaseScraper):
-    def __init__(self, slug: str = "burkina-faso", pages: int = 2):
-        super().__init__(name=f"JeuneAfrique-{slug}")
-        self.slug = slug
+class JeuneAfriqueMultiCountryScraper(BaseScraper):
+    def __init__(self, slugs: list = None, pages: int = 2):
+        if slugs is None:
+            slugs = ["burkina-faso", "cote-d-ivoire", "senegal"]  # Exemples de pays
+        super().__init__(name="JeuneAfrique-MultiCountry")
+        self.slugs = slugs
         self.pages = pages
-        self.base_url = f"https://www.jeuneafrique.com/pays/{slug}/"
+        self.base_domain = "https://www.jeuneafrique.com"
 
-    def fetch(self, page: int = 1):
-        url = f"{self.base_url}page/{page}/" if page > 1 else self.base_url
+    def fetch(self, slug: str, page: int = 1):
+        url = f"{self.base_domain}/pays/{slug}/page/{page}/" if page > 1 else f"{self.base_domain}/pays/{slug}/"
         resp = requests.get(url, timeout=10, headers={
             "User-Agent": "Mozilla/5.0 (compatible; ScraperBot/1.0)"
         })
@@ -24,13 +26,19 @@ class JeuneAfriqueCountryScraper(BaseScraper):
             title = a.get_text(strip=True)
             url = a.get("href")
             if title and url:
+                # Transformer URL relative en URL absolue si nécessaire
+                if url.startswith("/"):
+                    url = f"{self.base_domain}{url}"
                 articles.append({"title": title, "url": url})
         return articles
 
     def run(self):
-        all_articles = []
-        for page in range(1, self.pages + 1):
-            html = self.fetch(page)
-            articles = self.parse(html)
-            all_articles.extend(articles)
-        return {"articles": all_articles}
+        all_articles = {}
+        for slug in self.slugs:
+            country_articles = []
+            for page in range(1, self.pages + 1):
+                html = self.fetch(slug, page)
+                articles = self.parse(html)
+                country_articles.extend(articles)
+            all_articles[slug] = country_articles
+        return all_articles
