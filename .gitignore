@@ -1,20 +1,36 @@
-# Environnements virtuels
-scrap_env/
-venv/
-.env
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+*.sqlite3
 
-# Fichiers Python compilés
+# --- Virtual envs ---
+env/
+venv/
+.scrap_env/
+scrap_env/
+.venv/
+ENV/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.iml
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Byte-compiled caches ---
 __pycache__/
 *.py[cod]
 
-# Fichiers de logs
-data/logs/
-*.log
+# --- Jupyter ---
+.ipynb_checkpoints/
 
-# Données
-data/scraped_data.json
-
-# IDE / OS
-.vscode/
-.DS_Store
-Thumbs.db
+# --- Build / Dist ---
+build/
+dist/
+*.egg-info/
