@@ -19,14 +19,14 @@
 ---
 ## 🚀 Installation rapide
 
-```bash
+
 git clone https://github.com/ScrApErxeb/web-sniffer.git
 cd web-sniffer
 python -m venv venv
 source venv/bin/activate  # sous Windows : venv\Scripts\activate
 pip install -r requirements.txt
 
-⚙️ Configuration
+## ⚙️ Configuration
 
 Créez un fichier .env à la racine :
 
@@ -34,13 +34,13 @@ GOOGLE_API_KEY=...
 BING_COOKIE=...
 CACHE_TTL=86400
 
-▶️ Exécution
+## ▶️ Exécution
 
 Lancer le scraper principal :
 
 python main.py
 
-🧩 Structure du projet
+## 🧩 Structure du projet
 core/              # Composants communs : cache, fusion, parser, logger
 scrapers/          # Scrapers par source (Google, Bing, DDG, Jeune Afrique)
 config.py          # Gestion des variables d'environnement
