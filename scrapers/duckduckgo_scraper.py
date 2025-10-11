@@ -8,16 +8,22 @@ class DuckDuckGoScraper(BaseScraper):
         self.max_results = max_results
 
     def run(self):
-        with DDGS() as ddg:
-            # ATTENTION : la méthode text() prend `query` comme argument positionnel
-            results_raw = ddg.text(self.query, max_results=self.max_results)
         results = []
+        with DDGS() as ddg:
+            # text() prend query comme argument positionnel
+            results_raw = ddg.text(self.query, max_results=self.max_results)
+
+        seen_urls = set()
         for item in results_raw:
             title = item.get("title")
             url = item.get("href") or item.get("link")
-            if title and url:
-                results.append({"title": title, "url": url})
+            snippet = item.get("body") or ""  # ajout du snippet
+            if title and url and url not in seen_urls:
+                results.append({"title": title, "url": url, "snippet": snippet})
+                seen_urls.add(url)
+
         return {self.query: results}
 
     def parse(self, html=None):
+        # Placeholder pour compatibilité avec BaseScraper
         return []

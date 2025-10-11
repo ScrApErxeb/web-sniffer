@@ -22,8 +22,15 @@ class GoogleSearchScraper:
         resp = requests.get("https://www.googleapis.com/customsearch/v1", params=params)
         resp.raise_for_status()
         data = resp.json()
-        results = [{"title": item["title"], "link": item["link"]} for item in data.get("items", [])]
+        results = []
+        for item in data.get("items", []):
+            results.append({
+                "title": item.get("title"),
+                "url": item.get("link"),
+                "snippet": item.get("snippet", "")  # ajout du snippet
+            })
         return results
+
 
     def run(self, max_pages: int = 1):
         """

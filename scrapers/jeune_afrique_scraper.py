@@ -5,7 +5,7 @@ from .base_scraper import BaseScraper
 class JeuneAfriqueMultiCountryScraper(BaseScraper):
     def __init__(self, slugs: list = None, pages: int = 2):
         if slugs is None:
-            slugs = ["burkina-faso", "cote-d-ivoire", "senegal"]  # Exemples de pays
+            slugs = ["burkina-faso", "cote-d-ivoire", "senegal"]
         super().__init__(name="JeuneAfrique-MultiCountry")
         self.slugs = slugs
         self.pages = pages
@@ -26,10 +26,13 @@ class JeuneAfriqueMultiCountryScraper(BaseScraper):
             title = a.get_text(strip=True)
             url = a.get("href")
             if title and url:
-                # Transformer URL relative en URL absolue si nécessaire
                 if url.startswith("/"):
                     url = f"{self.base_domain}{url}"
-                articles.append({"title": title, "url": url})
+                articles.append({
+                    "title": title,
+                    "url": url,
+                    "snippet": ""  # snippet vide pour uniformité
+                })
         return articles
 
     def run(self):

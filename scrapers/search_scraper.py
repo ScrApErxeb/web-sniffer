@@ -38,22 +38,23 @@ class SearchScraper(BaseScraper):
                 title = res.get_text(strip=True)
                 url = res.get("href")
                 if title and url:
-                    results.append({"title": title, "url": url})
+                    results.append({"title": title, "url": url, "snippet": ""})  # snippet vide
         elif self.engine == "bing":
             for h2 in soup.select("li.b_algo h2 a"):
                 title = h2.get_text(strip=True)
                 url = h2.get("href")
                 if title and url:
-                    results.append({"title": title, "url": url})
+                    results.append({"title": title, "url": url, "snippet": ""})
         elif self.engine == "google":
             for a in soup.select("a h3"):
                 title = a.get_text(strip=True)
                 parent = a.find_parent("a")
                 url = parent.get("href") if parent else None
                 if title and url:
-                    results.append({"title": title, "url": url})
+                    results.append({"title": title, "url": url, "snippet": ""})
 
         return results
+
 
     def run(self, max_pages: int = 1):
         all_results = []
