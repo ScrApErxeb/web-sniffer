@@ -21,6 +21,7 @@
 
 
 git clone https://github.com/ScrApErxeb/web-sniffer.git
+
 cd web-sniffer
 python -m venv venv
 source venv/bin/activate  # sous Windows : venv\Scripts\activate
