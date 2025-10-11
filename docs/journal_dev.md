@@ -44,3 +44,12 @@
 - [2025-10-10 15:44:05] burkina faso | burkina faso économie | fusionné 94 | stats: {'google': 10, 'bing': 10, 'duckduckgo': 0, 'jeuneafrique': 90}
 - [2025-10-10 15:44:15] cote-divoire | cote-divoire économie | fusionné 93 | stats: {'google': 10, 'bing': 10, 'duckduckgo': 0, 'jeuneafrique': 90}
 - [2025-10-10 15:44:22] mali | mali économie | fusionné 88 | stats: {'google': 10, 'bing': 10, 'duckduckgo': 0, 'jeuneafrique': 90}
+- [2025-10-10 16:16:00] burkina faso | burkina faso économie | fusionné 109 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 0, 'jeuneafrique': 90}
+- [2025-10-10 16:16:12] cote-divoire | cote-divoire économie | fusionné 107 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 0, 'jeuneafrique': 90}
+- [2025-10-10 16:16:24] mali | mali économie | fusionné 108 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 0, 'jeuneafrique': 90}
+- [2025-10-10 16:17:40] burkina faso | burkina faso économie | fusionné 107 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 0, 'jeuneafrique': 90}
+- [2025-10-10 16:17:54] cote-divoire | cote-divoire économie | fusionné 109 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 0, 'jeuneafrique': 90}
+- [2025-10-10 16:18:05] mali | mali économie | fusionné 100 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 0, 'jeuneafrique': 90}
+- [2025-10-10 16:35:49] burkina faso | burkina faso économie | fusionné 97 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 10, 'jeuneafrique': 90}
+- [2025-10-10 16:36:02] cote-divoire | cote-divoire économie | fusionné 99 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 10, 'jeuneafrique': 90}
+- [2025-10-10 16:36:14] mali | mali économie | fusionné 120 | stats: {'google': 20, 'bing': 20, 'duckduckgo': 20, 'jeuneafrique': 90}
