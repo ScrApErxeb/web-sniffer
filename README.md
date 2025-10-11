@@ -20,12 +20,11 @@
 ## 🚀 Installation rapide
 
 
-git clone https://github.com/ScrApErxeb/web-sniffer.git
-
-cd web-sniffer
-python -m venv venv
-source venv/bin/activate  # sous Windows : venv\Scripts\activate
-pip install -r requirements.txt
+- git clone https://github.com/ScrApErxeb/web-sniffer.git
+- cd web-sniffer
+- python -m venv venv
+- source venv/bin/activate  # sous Windows : venv\Scripts\activate
+- pip install -r requirements.txt
 
 ## ⚙️ Configuration
 
