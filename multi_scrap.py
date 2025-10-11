@@ -6,8 +6,7 @@ from scrapers.search_scraper import SearchScraper  # Bing HTML
 from scrapers.duckduckgo_scraper import DuckDuckGoScraper
 from scrapers.jeune_afrique_scraper import JeuneAfriqueMultiCountryScraper
 from core.storage import save_data
-import sqlite3
-from datetime import datetime
+from core.cache import Cache
 
 load_dotenv()
 
@@ -17,55 +16,10 @@ COUNTRIES = os.getenv("COUNTRIES").split(",")
 MAX_PAGES = 2
 PAGES_JA = 2
 CACHE_DB = "cache.db"
+CACHE_TTL_HOURS = 24
 
-# ----- CACHE UTILITIES -----
-def init_cache():
-    conn = sqlite3.connect(CACHE_DB)
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS cache (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        source TEXT NOT NULL,
-        query TEXT,
-        url TEXT UNIQUE,
-        title TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    conn.commit()
-    conn.close()
-
-def save_to_cache(source, query, results):
-    conn = sqlite3.connect(CACHE_DB)
-    cursor = conn.cursor()
-    for item in results:
-        url = item.get("url") or item.get("link")
-        title = item.get("title") or "No title"
-        if not url:
-            continue  # ignore si pas d'URL
-        try:
-            cursor.execute("""
-                INSERT INTO cache (source, query, url, title) VALUES (?, ?, ?, ?)
-            """, (source, query, url, title))
-        except sqlite3.IntegrityError:
-            continue  # URL déjà présente
-    conn.commit()
-    conn.close()
-
-
-def load_from_cache(query, source=None):
-    conn = sqlite3.connect(CACHE_DB)
-    cursor = conn.cursor()
-    if source:
-        cursor.execute("SELECT title, url FROM cache WHERE query=? AND source=?", (query, source))
-    else:
-        cursor.execute("SELECT title, url FROM cache WHERE query=?", (query,))
-    rows = cursor.fetchall()
-    conn.close()
-    return [{"title": r[0], "url": r[1]} for r in rows]
-
-# ----- INIT -----
-init_cache()
+# ----- INIT CACHE -----
+cache = Cache(db_path=CACHE_DB, ttl_hours=CACHE_TTL_HOURS)
 
 # ----- SCRAPING -----
 for country in COUNTRIES:
@@ -75,39 +29,41 @@ for country in COUNTRIES:
     stats = {}
 
     # -------- GOOGLE API --------
-    cached_google = load_from_cache(query, "google")
+    cached_google = cache.load(query, "google")
     if cached_google:
         merged_results.extend(cached_google)
         stats["google"] = len(cached_google)
     else:
         google_scraper = GoogleSearchScraper(query=query, date_range=DATE_RANGE)
-        google_data = google_scraper.run()
+        google_data = google_scraper.run(max_pages=MAX_PAGES)
         for item in google_data[query]:
             url = item.get("link")
-            if url not in seen_urls:
-                merged_results.append(item)
+            snippet = item.get("snippet", "")
+            if url and url not in seen_urls:
+                merged_results.append({"title": item["title"], "url": url, "snippet": snippet})
                 seen_urls.add(url)
-        save_to_cache("google", query, google_data[query])
+        cache.save("google", query, merged_results)
         stats["google"] = len(google_data[query])
 
     # -------- BING HTML --------
-    cached_bing = load_from_cache(query, "bing")
+    cached_bing = cache.load(query, "bing")
     if cached_bing:
         merged_results.extend(cached_bing)
         stats["bing"] = len(cached_bing)
     else:
         bing_scraper = SearchScraper(query=query, engine="bing")
-        bing_data = bing_scraper.run()
+        bing_data = bing_scraper.run(max_pages=MAX_PAGES)
         for item in bing_data[query]:
-            url = item.get("url") or item.get("link")
-            if url not in seen_urls:
-                merged_results.append(item)
+            url = item.get("url")
+            snippet = item.get("snippet", "")
+            if url and url not in seen_urls:
+                merged_results.append({"title": item["title"], "url": url, "snippet": snippet})
                 seen_urls.add(url)
-        save_to_cache("bing", query, bing_data[query])
+        cache.save("bing", query, bing_data[query])
         stats["bing"] = len(bing_data[query])
 
     # -------- DUCKDUCKGO HTML via DDGS --------
-    cached_ddg = load_from_cache(query, "duckduckgo")
+    cached_ddg = cache.load(query, "duckduckgo")
     if cached_ddg:
         merged_results.extend(cached_ddg)
         stats["duckduckgo"] = len(cached_ddg)
@@ -116,15 +72,16 @@ for country in COUNTRIES:
         ddg_data = ddg_scraper.run()
         for item in ddg_data[query]:
             url = item.get("url")
-            if url not in seen_urls:
-                merged_results.append(item)
+            snippet = item.get("snippet", "")
+            if url and url not in seen_urls:
+                merged_results.append({"title": item["title"], "url": url, "snippet": snippet})
                 seen_urls.add(url)
-        save_to_cache("duckduckgo", query, ddg_data[query])
+        cache.save("duckduckgo", query, ddg_data[query])
         stats["duckduckgo"] = len(ddg_data[query])
 
     # -------- JEUNEAFRIQUE MULTI-PAGES --------
     ja_slug = country.strip().replace(" ", "-")
-    cached_ja = load_from_cache(query, "jeuneafrique")
+    cached_ja = cache.load(query, "jeuneafrique")
     if cached_ja:
         merged_results.extend(cached_ja)
         stats["jeuneafrique"] = len(cached_ja)
@@ -134,10 +91,11 @@ for country in COUNTRIES:
         ja_articles = ja_data[ja_slug]
         for item in ja_articles:
             url = item.get("url")
-            if url not in seen_urls:
-                merged_results.append(item)
+            snippet = item.get("snippet", "")
+            if url and url not in seen_urls:
+                merged_results.append({"title": item["title"], "url": url, "snippet": snippet})
                 seen_urls.add(url)
-        save_to_cache("jeuneafrique", query, ja_articles)
+        cache.save("jeuneafrique", query, ja_articles)
         stats["jeuneafrique"] = len(ja_articles)
 
     # ----- SAVE + LOG -----
