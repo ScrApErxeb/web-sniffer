@@ -7,11 +7,12 @@ class DuckDuckGoScraper(BaseScraper):
         self.query = query
         self.max_results = max_results
 
-    def run(self):
+    def run(self, max_pages: int = 1):
+        max_results = max_pages * 10
         results = []
         with DDGS() as ddg:
             # text() prend query comme argument positionnel
-            results_raw = ddg.text(self.query, max_results=self.max_results)
+            results_raw = ddg.text(self.query, max_results=max_results)
 
         seen_urls = set()
         for item in results_raw:
