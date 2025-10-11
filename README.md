@@ -41,8 +41,8 @@ Lancer le scraper principal :
 python main.py
 
 ## 🧩 Structure du projet
-core/              # Composants communs : cache, fusion, parser, logger
-scrapers/          # Scrapers par source (Google, Bing, DDG, Jeune Afrique)
-config.py          # Gestion des variables d'environnement
-main.py            # Point d'entrée principal
-requirements.txt   # Dépendances
+- core/              # Composants communs : cache, fusion, parser, logger
+- scrapers/          # Scrapers par source (Google, Bing, DDG, Jeune Afrique)
+- config.py          # Gestion des variables d'environnement
+- main.py            # Point d'entrée principal
+- requirements.txt   # Dépendances
