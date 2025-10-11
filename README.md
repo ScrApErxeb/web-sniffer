@@ -26,7 +26,7 @@ python -m venv scrap_env
 source scrap_env/bin/activate  # ou `scrap_env\Scripts\activate` sur Windows
 pip install -r requirements.txt
 
-
+---
 ## Créer un fichier .env avec :
 
 GOOGLE_API_KEY=ton_api_key
