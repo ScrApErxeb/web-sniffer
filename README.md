@@ -20,7 +20,7 @@
 ## Installation
 
 ```bash
-git clone https://github.com/tonusername/web-sniffer.git
+git clone (https://github.com/ScrApErxeb/web-sniffer.git)
 cd web-sniffer
 python -m venv scrap_env
 source scrap_env/bin/activate  # ou `scrap_env\Scripts\activate` sur Windows
