@@ -1,36 +1,36 @@
-# --- Python ---
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.log
-*.sqlite3
-
-# --- Virtual envs ---
-env/
+# --- ENVIRONNEMENT ---
 venv/
-.scrap_env/
-scrap_env/
-.venv/
-ENV/
+.env
+.env.*
 
-# --- IDE / Editor ---
-.vscode/
-.idea/
-*.iml
+# --- BASE DE DONNÉES ET DONNÉES ---
+*.db
+/data/
+!/data/.gitkeep
+/reports/
+!/reports/.gitkeep
+cache/
+__pycache__/
 
-# --- OS files ---
+# --- FICHIERS DE SYSTÈME ---
 .DS_Store
 Thumbs.db
 
-# --- Byte-compiled caches ---
+# --- LOGS / BACKUPS ---
+*.log
+*.bak
+*.tmp
+
+# --- PYTHON ---
+*.pyc
+*.pyo
+*.pyd
 __pycache__/
-*.py[cod]
+.pytest_cache/
 
-# --- Jupyter ---
-.ipynb_checkpoints/
+# --- IDE / ÉDITEURS ---
+.vscode/
+.idea/
 
-# --- Build / Dist ---
-build/
-dist/
-*.egg-info/
+# --- AUTRES ---
+*.sqlite
