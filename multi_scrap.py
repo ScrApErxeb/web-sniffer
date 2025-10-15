@@ -1,149 +1,96 @@
 # multi_scrap.py
-import os
-import threading
-import time
-from queue import Queue
-from datetime import datetime
-from dotenv import load_dotenv
-import sqlite3
+import logging
+from time import sleep
+from urllib.parse import quote
 
+from core.cache import JSONCache
+from core.logger import logger
 from scrapers.google_search_scraper import GoogleSearchScraper
-from scrapers.search_scraper import SearchScraper
 from scrapers.duckduckgo_scraper import DuckDuckGoScraper
+from scrapers.wikipedia_scraper import WikipediaScraper
 from scrapers.jeune_afrique_scraper import JeuneAfriqueMultiCountryScraper
-from core.cache import Cache
-from core.utils import setup_logger
 
-load_dotenv()
+# Liste des pays et leurs slugs corrects pour JeuneAfrique
+COUNTRIES = {
+    "Burkina Faso": {"wiki": "Burkina_Faso", "ja_slug": "burkina-faso"},
+    "Senegal": {"wiki": "Senegal", "ja_slug": "senegal"},
+    "Cote d'Ivoire": {"wiki": "Côte_d'Ivoire", "ja_slug": "cote-divoire"},
+    # Ajouter d'autres pays ici
+}
 
-# ----- CONFIG -----
-DATE_RANGE = os.getenv("DEFAULT_DATE_RANGE", "w1")
-COUNTRIES = [c.strip() for c in os.getenv("COUNTRIES").split(",")]
-MAX_PAGES = 2
-PAGES_JA = 2
-CACHE_DB = "cache.db"
-RESULTS_DB = "results.db"
-CACHE_TTL = 24 * 3600  # 24h
-JA_REQUEST_INTERVAL = 2
+cache = JSONCache("cache.json")
 
-# ----- INIT -----
-logger = setup_logger()
-cache = Cache(db_path=CACHE_DB, ttl_seconds=CACHE_TTL)
+def scrape_country(country_name: str, slugs: dict, max_pages: int = 2):
+    logger.info(f"Scraping {country_name}...")
 
-# ----- SQLite results DB -----
-def init_results_db():
-    conn = sqlite3.connect(RESULTS_DB)
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS results (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        country TEXT,
-        query TEXT,
-        source TEXT,
-        title TEXT,
-        url TEXT UNIQUE,
-        snippet TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    conn.commit()
-    conn.close()
-
-def save_result(country, query, source, results):
-    conn = sqlite3.connect(RESULTS_DB)
-    cursor = conn.cursor()
-    for item in results:
-        try:
-            cursor.execute("""
-                INSERT INTO results (country, query, source, title, url, snippet)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (country, query, source, item["title"], item["url"], item.get("snippet", "")))
-        except sqlite3.IntegrityError:
-            continue  # URL déjà présente
-    conn.commit()
-    conn.close()
-
-init_results_db()
-
-# ----- WORKER FUNCTION -----
-def scrape_country(country, output_queue):
-    query = f"{country} securité"
+    stats = {}
     merged_results = []
-    seen_urls = set()
-    stats_per_source = {}
 
-    scrapers = [
-        ("google", GoogleSearchScraper, {"query": query, "date_range": DATE_RANGE}),
-        ("bing", SearchScraper, {"query": query, "engine": "bing"}),
-        ("duckduckgo", DuckDuckGoScraper, {"query": query, "max_results": 20}),
-        ("jeuneafrique", JeuneAfriqueMultiCountryScraper, {"slugs": [country.replace(" ", "-")], "pages": PAGES_JA}),
-    ]
+    # --- Google ---
+    google_scraper = GoogleSearchScraper(query=country_name)
+    try:
+        results = google_scraper.run(max_pages=1)
+        merged_results.extend(results[country_name])
+        stats["google"] = {"count": len(results[country_name]), "status": "OK"}
+        cache.save(country_name, "google", results[country_name])
+    except Exception as e:
+        logger.error(f"Erreur Google pour {country_name}: {e}")
+        stats["google"] = {"count": 0, "status": "ERROR"}
 
-    for source, scraper_class, kwargs in scrapers:
+    sleep(1)  # anti-throttle
+
+    # --- DuckDuckGo ---
+    ddg_scraper = DuckDuckGoScraper(query=country_name, max_results=20)
+    try:
+        results = ddg_scraper.run(max_pages=1)
+        merged_results.extend(results[country_name])
+        stats["duckduckgo"] = {"count": len(results[country_name]), "status": "OK"}
+        cache.save(country_name, "duckduckgo", results[country_name])
+    except Exception as e:
+        logger.error(f"Erreur DuckDuckGo pour {country_name}: {e}")
+        stats["duckduckgo"] = {"count": 0, "status": "ERROR"}
+
+    sleep(1)
+
+    # --- Wikipedia ---
+    wiki_url = f"https://fr.wikipedia.org/wiki/{quote(slugs['wiki'])}"
+    wiki_scraper = WikipediaScraper(url=wiki_url)
+    try:
+        html = wiki_scraper.fetch_page()  # utilise fetch_page si implémenté
+        data = wiki_scraper.parse(html)
+        merged_results.append(data)
+        stats["wikipedia"] = {"count": 1, "status": "OK"}
+        cache.save(country_name, "wikipedia", data)
+    except Exception as e:
+        logger.error(f"Erreur Wikipedia pour {country_name}: {e}")
+        stats["wikipedia"] = {"count": 0, "status": "ERROR"}
+
+    sleep(1)
+
+    # --- Jeune Afrique ---
+    ja_scraper = JeuneAfriqueMultiCountryScraper(slugs=[slugs["ja_slug"]], pages=max_pages)
+    try:
+        results = ja_scraper.run()
+        country_articles = results.get(slugs["ja_slug"], [])
+        merged_results.extend(country_articles)
+        stats["jeuneafrique"] = {"count": len(country_articles), "status": "OK"}
+        cache.save(country_name, "jeuneafrique", country_articles)
+    except Exception as e:
+        logger.error(f"Erreur JeuneAfrique pour {country_name}: {e}")
+        stats["jeuneafrique"] = {"count": 0, "status": "ERROR"}
+
+    logger.info(f"{country_name} | fusionné {len(merged_results)} | stats: {stats}")
+    return country_name, merged_results, stats
+
+def run_all(countries: dict = COUNTRIES, max_pages: int = 2):
+    results = []
+    for country_name, slugs in countries.items():
         try:
-            cached = cache.load(query, source)
-            if cached:
-                merged_results.extend(cached)
-                stats_per_source[source] = {"count": len(cached), "status": "SKIPPED"}
-            else:
-                if source == "google":
-                    scraper = GoogleSearchScraper(**kwargs)
-                    data = scraper.run(max_pages=MAX_PAGES)
-                    items = data.get(query, [])
-                elif source == "duckduckgo":
-                    scraper = DuckDuckGoScraper(**kwargs)
-                    data = scraper.run()
-                    items = data.get(query, [])
-                elif source == "jeuneafrique":
-                    scraper = JeuneAfriqueMultiCountryScraper(**kwargs)
-                    data = {}
-                    slug = kwargs["slugs"][0]
-                    for page in range(1, PAGES_JA + 1):
-                        page_data = scraper.fetch(slug, page)
-                        parsed = scraper.parse(page_data)
-                        if slug not in data:
-                            data[slug] = []
-                        data[slug].extend(parsed)
-                        time.sleep(JA_REQUEST_INTERVAL)  # intervalle anti-429
-                    items = data.get(slug, [])
-                else:
-                    scraper = scraper_class(**kwargs)
-                    data = scraper.run(max_pages=MAX_PAGES)
-                    items = data.get(query, [])
-
-                results = []
-                for item in items:
-                    url = item.get("url") or item.get("link")
-                    title = item.get("title")
-                    snippet = item.get("snippet", "")
-                    if url and url not in seen_urls:
-                        results.append({"title": title, "url": url, "snippet": snippet})
-                        seen_urls.add(url)
-
-                merged_results.extend(results)
-                cache.save(query, source, results)
-                save_result(country, query, source, results)
-                stats_per_source[source] = {"count": len(results), "status": "OK"}
-
+            result = scrape_country(country_name, slugs, max_pages=max_pages)
+            results.append(result)
         except Exception as e:
-            logger.error(f"{scraper_class.__name__} | {query} | ERROR | {e}")
-            stats_per_source[source] = {"count": 0, "status": "ERROR"}
+            logger.error(f"Erreur globale pour {country_name}: {e}")
+    return results
 
-    output_queue.put((country, query, merged_results, stats_per_source))
-
-# ----- THREADING -----
-output_queue = Queue()
-threads = []
-
-for country in COUNTRIES:
-    t = threading.Thread(target=scrape_country, args=(country, output_queue))
-    t.start()
-    threads.append(t)
-
-for t in threads:
-    t.join()
-
-# ----- LOG RESULTS -----
-while not output_queue.empty():
-    country, query, merged_results, stats = output_queue.get()
-    logger.info(f"{country} | {query} | fusionné {len(merged_results)} | stats: {stats}")
+if __name__ == "__main__":
+    run_all()

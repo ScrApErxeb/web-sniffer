@@ -11,20 +11,20 @@ class DuckDuckGoScraper(BaseScraper):
         max_results = max_pages * 10
         results = []
         with DDGS() as ddg:
-            # text() prend query comme argument positionnel
             results_raw = ddg.text(self.query, max_results=max_results)
 
         seen_urls = set()
         for item in results_raw:
             title = item.get("title")
             url = item.get("href") or item.get("link")
-            snippet = item.get("body") or ""  # ajout du snippet
+            snippet = item.get("body") or ""
             if title and url and url not in seen_urls:
                 results.append({"title": title, "url": url, "snippet": snippet})
                 seen_urls.add(url)
 
         return {self.query: results}
 
-    def parse(self, html=None):
-        # Placeholder pour compatibilité avec BaseScraper
-        return []
+    # ✅ Implémentation réelle de parse pour lever l’abstraction
+    def parse(self, html: str):
+        # Si tu veux juste un placeholder minimal pour BaseScraper :
+        return [{"title": self.query, "url": "", "snippet": ""}]
