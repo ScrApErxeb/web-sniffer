@@ -2,7 +2,9 @@
 import json
 import os
 from datetime import datetime
+
 from jinja2 import Template
+
 
 class Reporter:
     """
@@ -91,3 +93,7 @@ class Reporter:
         self.save_json()
         self.save_html()
         return self.json_path, self.html_path
+
+
+def generate_report(output_dir="reports"):
+    return Reporter(output_dir)

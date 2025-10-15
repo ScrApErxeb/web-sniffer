@@ -2,6 +2,7 @@
 venv/
 .env
 .env.*
+sniffer_venv/
 
 # --- BASE DE DONNÉES ET DONNÉES ---
 *.db

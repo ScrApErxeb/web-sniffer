@@ -1,9 +1,11 @@
 import os
+
 from dotenv import load_dotenv
-from scrapers.google_search_scraper import GoogleSearchScraper
-from scrapers.search_scraper import SearchScraper  # DuckDuckGo + Bing
-from scrapers.jeune_afrique_scraper import JeuneAfriqueMultiCountryScraper
+
 from core.storage import save_data
+from scrapers.google_search_scraper import GoogleSearchScraper
+from scrapers.jeune_afrique_scraper import JeuneAfriqueMultiCountryScraper
+from scrapers.search_scraper import SearchScraper  # DuckDuckGo + Bing
 
 load_dotenv()
 
