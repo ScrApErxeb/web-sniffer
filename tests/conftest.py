@@ -1,9 +1,11 @@
-import pytest
-from unittest.mock import MagicMock, patch
-import sqlite3
 import builtins
+import sqlite3
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from core.cache import Cache
+
 
 # ------------------------------
 # FIXTURE: Cache mocké

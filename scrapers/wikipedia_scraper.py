@@ -1,25 +1,25 @@
+from typing import Any, Dict
+
 from bs4 import BeautifulSoup
+
+from core.http_client import fetch
+
 from .base_scraper import BaseScraper
 
+
 class WikipediaScraper(BaseScraper):
-    def __init__(self, url: str = None):
+    def __init__(self, url: str):
         super().__init__("WikipediaScraper")
-        self.url = url
+        self.url: str = url
 
-    def fetch_page(self):
-        import requests
-        if not self.url:
-            raise ValueError("URL non définie pour WikipediaScraper")
-        resp = requests.get(self.url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-        resp.raise_for_status()
-        return resp.text
+    def fetch_page(self) -> str:
+        return fetch(self.url)
 
-    # ✅ Implémentation réelle pour lever l’abstraction
-    def parse(self, html: str):
+    def parse(self, html: str) -> Dict[str, str]:
         soup = BeautifulSoup(html, "lxml")
-        title = soup.title.string if soup.title else "No title"
+        title: str = soup.title.string if soup.title else "No title"
 
-        first_paragraph = ""
+        first_paragraph: str = ""
         content_div = soup.find("div", {"class": "mw-parser-output"})
         if content_div:
             for p in content_div.find_all("p"):
@@ -28,12 +28,4 @@ class WikipediaScraper(BaseScraper):
                     first_paragraph = text
                     break
 
-        return {
-            "title": title,
-            "url": self.url or "",
-            "snippet": first_paragraph
-        }
-
-    def run(self):
-        html = self.fetch_page()
-        return {self.url: self.parse(html)}
+        return {"title": title, "url": self.url, "snippet": first_paragraph}

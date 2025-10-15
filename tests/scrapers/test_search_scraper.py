@@ -1,5 +1,7 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import patch, Mock
+
 from scrapers.search_scraper import SearchScraper
 
 html_ddg = '<a class="result__a" href="https://example.com">Test Title</a>'

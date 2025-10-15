@@ -1,96 +1,117 @@
 # multi_scrap.py
 import logging
-from time import sleep
-from urllib.parse import quote
+from typing import Any, Dict, List, Tuple
 
-from core.cache import JSONCache
-from core.logger import logger
-from scrapers.google_search_scraper import GoogleSearchScraper
+from core.cache import CacheInterface, JSONCache
 from scrapers.duckduckgo_scraper import DuckDuckGoScraper
-from scrapers.wikipedia_scraper import WikipediaScraper
+from scrapers.google_search_scraper import GoogleSearchScraper
 from scrapers.jeune_afrique_scraper import JeuneAfriqueMultiCountryScraper
+from scrapers.wikipedia_scraper import WikipediaScraper
 
-# Liste des pays et leurs slugs corrects pour JeuneAfrique
-COUNTRIES = {
-    "Burkina Faso": {"wiki": "Burkina_Faso", "ja_slug": "burkina-faso"},
-    "Senegal": {"wiki": "Senegal", "ja_slug": "senegal"},
-    "Cote d'Ivoire": {"wiki": "Côte_d'Ivoire", "ja_slug": "cote-divoire"},
-    # Ajouter d'autres pays ici
-}
+logger = logging.getLogger("multi_scrap")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 
-cache = JSONCache("cache.json")
 
-def scrape_country(country_name: str, slugs: dict, max_pages: int = 2):
-    logger.info(f"Scraping {country_name}...")
+def run_all(
+    countries: List[str],
+    cache_instance: CacheInterface
+) -> List[Tuple[str, str, List[Dict[str, Any]], Dict[str, Dict[str, Any]]]]:
+    """
+    Scrape toutes les sources pour chaque pays, avec cache et stats.
+    
+    Returns:
+        List of tuples: (country, query, merged_results, stats)
+    """
+    results: List[Tuple[str, str, List[Dict[str, Any]], Dict[str, Dict[str, Any]]]] = []
 
-    stats = {}
-    merged_results = []
+    for country in countries:
+        logger.info(f"Scraping {country}...")
 
-    # --- Google ---
-    google_scraper = GoogleSearchScraper(query=country_name)
-    try:
-        results = google_scraper.run(max_pages=1)
-        merged_results.extend(results[country_name])
-        stats["google"] = {"count": len(results[country_name]), "status": "OK"}
-        cache.save(country_name, "google", results[country_name])
-    except Exception as e:
-        logger.error(f"Erreur Google pour {country_name}: {e}")
-        stats["google"] = {"count": 0, "status": "ERROR"}
+        merged_results: List[Dict[str, Any]] = []
+        stats: Dict[str, Dict[str, Any]] = {}
 
-    sleep(1)  # anti-throttle
+        # --- Google ---
+        google_scraper = GoogleSearchScraper(query=country)
+        google_data = cache_instance.load(country, "google")
+        if google_data is None:
+            try:
+                google_data = google_scraper.run(max_pages=2)["Burkina Faso"]
+                cache_instance.save(country, "google", google_data)
+                status = "OK"
+            except Exception as e:
+                logger.error(f"Erreur Google pour {country}: {e}")
+                google_data = []
+                status = "ERROR"
+        else:
+            status = "CACHED"
+        merged_results.extend(google_data)
+        stats["google"] = {"count": len(google_data), "status": status}
 
-    # --- DuckDuckGo ---
-    ddg_scraper = DuckDuckGoScraper(query=country_name, max_results=20)
-    try:
-        results = ddg_scraper.run(max_pages=1)
-        merged_results.extend(results[country_name])
-        stats["duckduckgo"] = {"count": len(results[country_name]), "status": "OK"}
-        cache.save(country_name, "duckduckgo", results[country_name])
-    except Exception as e:
-        logger.error(f"Erreur DuckDuckGo pour {country_name}: {e}")
-        stats["duckduckgo"] = {"count": 0, "status": "ERROR"}
+        # --- DuckDuckGo ---
+        ddg_scraper = DuckDuckGoScraper(query=country, max_results=20)
+        ddg_data = cache_instance.load(country, "duckduckgo")
+        if ddg_data is None:
+            try:
+                items = ddg_scraper.fetch_page()
+                ddg_data = ddg_scraper.parse(items)
+                cache_instance.save(country, "duckduckgo", ddg_data)
+                status = "OK"
+            except Exception as e:
+                logger.error(f"Erreur DuckDuckGo pour {country}: {e}")
+                ddg_data = []
+                status = "ERROR"
+        else:
+            status = "CACHED"
+        merged_results.extend(ddg_data)
+        stats["duckduckgo"] = {"count": len(ddg_data), "status": status}
 
-    sleep(1)
+        # --- Wikipedia ---
+        wiki_url = f"https://fr.wikipedia.org/wiki/{country.replace(' ', '_')}"
+        wiki_scraper = WikipediaScraper(url=wiki_url)
+        wiki_data = cache_instance.load(country, "wikipedia")
+        if wiki_data is None:
+            try:
+                html = wiki_scraper.fetch_page()
+                wiki_data = [wiki_scraper.parse(html)]
+                cache_instance.save(country, "wikipedia", wiki_data)
+                status = "OK"
+            except Exception as e:
+                logger.error(f"Erreur Wikipedia pour {country}: {e}")
+                wiki_data = []
+                status = "ERROR"
+        else:
+            status = "CACHED"
+        merged_results.extend(wiki_data)
+        stats["wikipedia"] = {"count": len(wiki_data), "status": status}
 
-    # --- Wikipedia ---
-    wiki_url = f"https://fr.wikipedia.org/wiki/{quote(slugs['wiki'])}"
-    wiki_scraper = WikipediaScraper(url=wiki_url)
-    try:
-        html = wiki_scraper.fetch_page()  # utilise fetch_page si implémenté
-        data = wiki_scraper.parse(html)
-        merged_results.append(data)
-        stats["wikipedia"] = {"count": 1, "status": "OK"}
-        cache.save(country_name, "wikipedia", data)
-    except Exception as e:
-        logger.error(f"Erreur Wikipedia pour {country_name}: {e}")
-        stats["wikipedia"] = {"count": 0, "status": "ERROR"}
+        # --- Jeune Afrique ---
+        # convertir les noms pays en slugs corrects
+        slug = country.lower().replace(" ", "-").replace("'", "")
+        ja_scraper = JeuneAfriqueMultiCountryScraper(slugs=[slug], pages=2)
+        ja_data = cache_instance.load(country, "jeuneafrique")
+        if ja_data is None:
+            try:
+                ja_data_dict = ja_scraper.run()
+                ja_data = ja_data_dict.get(slug, [])
+                cache_instance.save(country, "jeuneafrique", ja_data)
+                status = "OK"
+            except Exception as e:
+                logger.error(f"Erreur JeuneAfrique pour {country}: {e}")
+                ja_data = []
+                status = "ERROR"
+        else:
+            status = "CACHED"
+        merged_results.extend(ja_data)
+        stats["jeuneafrique"] = {"count": len(ja_data), "status": status}
 
-    sleep(1)
+        logger.info(f"{country} | fusionné {len(merged_results)} | stats: {stats}")
 
-    # --- Jeune Afrique ---
-    ja_scraper = JeuneAfriqueMultiCountryScraper(slugs=[slugs["ja_slug"]], pages=max_pages)
-    try:
-        results = ja_scraper.run()
-        country_articles = results.get(slugs["ja_slug"], [])
-        merged_results.extend(country_articles)
-        stats["jeuneafrique"] = {"count": len(country_articles), "status": "OK"}
-        cache.save(country_name, "jeuneafrique", country_articles)
-    except Exception as e:
-        logger.error(f"Erreur JeuneAfrique pour {country_name}: {e}")
-        stats["jeuneafrique"] = {"count": 0, "status": "ERROR"}
+        results.append((country, country, merged_results, stats))
 
-    logger.info(f"{country_name} | fusionné {len(merged_results)} | stats: {stats}")
-    return country_name, merged_results, stats
-
-def run_all(countries: dict = COUNTRIES, max_pages: int = 2):
-    results = []
-    for country_name, slugs in countries.items():
-        try:
-            result = scrape_country(country_name, slugs, max_pages=max_pages)
-            results.append(result)
-        except Exception as e:
-            logger.error(f"Erreur globale pour {country_name}: {e}")
     return results
 
+
 if __name__ == "__main__":
-    run_all()
+    countries_list = ["Burkina Faso", "Senegal", "Cote d'Ivoire"]
+    cache = JSONCache(filepath="cache.json")
+    run_all(countries_list, cache)

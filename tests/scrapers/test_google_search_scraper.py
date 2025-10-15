@@ -1,7 +1,10 @@
-import pytest
-from unittest.mock import patch
-from scrapers.google_search_scraper import GoogleSearchScraper
 import json
+from unittest.mock import patch
+
+import pytest
+
+from scrapers.google_search_scraper import GoogleSearchScraper
+
 
 def test_google_scraper():
     mock_data = {

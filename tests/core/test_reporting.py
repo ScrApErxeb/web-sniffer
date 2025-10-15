@@ -1,5 +1,7 @@
 import pytest
+
 from core.reporting import Reporter
+
 
 def test_generate_report_creates_dict(tmp_path):
     data = [{"title": "t1"}, {"title": "t2"}]

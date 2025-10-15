@@ -1,5 +1,7 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from scrapers.duckduckgo_scraper import DuckDuckGoScraper
+
 
 @patch("scrapers.duckduckgo_scraper.DDGS")
 def test_duckduckgo_scraper(mock_ddgs_class):

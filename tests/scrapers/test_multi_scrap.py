@@ -1,7 +1,8 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock
+
 from multi_scrap import run_all
-from unittest.mock import patch
 
 
 class DummyCache:

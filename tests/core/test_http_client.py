@@ -1,5 +1,7 @@
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 from core.http_client import fetch
+
 
 def test_fetch_success():
     mock_resp = Mock()

@@ -1,7 +1,8 @@
 # core/cache.py
-from typing import Any, Optional
 import json
 import os
+from typing import Any, Optional
+
 
 class CacheInterface:
     def load(self, query: str, source: str) -> Optional[Any]:

@@ -1,0 +1,18 @@
+# Testing
+pytest==8.4.2
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+requests-mock==1.11.0
+
+# Typing / static analysis
+mypy==1.5.1
+types-requests==2.31.0.17
+types-python-dotenv==1.0.3
+
+# Code quality / formatting
+black==24.3.0
+isort==6.12.0
+ruff==0.0.302
+
+# Optional: Linting helpers
+flake8==6.1.0

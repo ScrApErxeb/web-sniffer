@@ -2,6 +2,7 @@
 import logging
 from urllib.parse import urlparse, urlunparse
 
+
 def setup_logger(name="web-sniffer"):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)

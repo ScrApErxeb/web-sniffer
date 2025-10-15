@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from scrapers.wikipedia_scraper import WikipediaScraper
+
 
 def test_wikipedia_scraper():
     scraper = WikipediaScraper("https://fr.wikipedia.org/wiki/Python")

@@ -1,6 +1,8 @@
 import json
 import os
+
 from config import DATA_PATH
+
 
 def save_data(source: str, data: dict) -> None:
     # Crée le dossier parent si nécessaire
