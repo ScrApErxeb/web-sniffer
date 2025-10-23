@@ -1,6 +1,7 @@
 # core/fusion.py
 from urllib.parse import urlparse
 
+
 def normalize_url(url):
     """Supprime les paramètres et normalise l'URL pour éviter les doublons"""
     try:

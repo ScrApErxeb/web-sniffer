@@ -1,7 +1,9 @@
 import os
+
 from dotenv import load_dotenv
-from scrapers.google_search_scraper import GoogleSearchScraper
+
 from core.storage import save_data
+from scrapers.google_search_scraper import GoogleSearchScraper
 
 load_dotenv()
 

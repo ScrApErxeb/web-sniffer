@@ -1,30 +1,34 @@
-from .base_scraper import BaseScraper
+from typing import Any, Dict, List
+
 from ddgs import DDGS
+
+from .base_scraper import BaseScraper
+
 
 class DuckDuckGoScraper(BaseScraper):
     def __init__(self, query: str, max_results: int = 10):
-        super().__init__(name="DuckDuckGoScraper")
-        self.query = query
-        self.max_results = max_results
+        super().__init__("DuckDuckGoScraper")
+        self.query: str = query
+        self.max_results: int = max_results
 
-    def run(self, max_pages: int = 1):
-        max_results = max_pages * 10
-        results = []
+    def fetch_page(self, page: int = 0) -> List[Dict[str, Any]]:
+        max_results = page * 10 + self.max_results
         with DDGS() as ddg:
-            # text() prend query comme argument positionnel
-            results_raw = ddg.text(self.query, max_results=max_results)
+            return list(ddg.text(self.query, max_results=max_results))
 
-        seen_urls = set()
-        for item in results_raw:
-            title = item.get("title")
-            url = item.get("href") or item.get("link")
-            snippet = item.get("body") or ""  # ajout du snippet
+    def parse(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        results: List[Dict[str, Any]] = []
+        seen_urls: set[str] = set()
+        for item in items:
+            title: str = item.get("title", "")
+            url: str = item.get("href") or item.get("link", "")
+            snippet: str = item.get("body", "")
             if title and url and url not in seen_urls:
                 results.append({"title": title, "url": url, "snippet": snippet})
                 seen_urls.add(url)
+        return results
 
-        return {self.query: results}
-
-    def parse(self, html=None):
-        # Placeholder pour compatibilité avec BaseScraper
-        return []
+    def run(self, max_pages: int = 1) -> Dict[str, List[Dict[str, Any]]]:
+        items = self.fetch_page()
+        parsed = self.parse(items)
+        return {self.query: parsed}

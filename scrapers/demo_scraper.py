@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
+
 from .base_scraper import BaseScraper
+
 
 class DemoScraper(BaseScraper):
     def __init__(self):

@@ -1,0 +1,73 @@
+# 🧱 AUDIT_TODO.md — Web-Sniffer : Plan d’Amélioration Technique
+
+## 🔴 PRIORITÉ 1 — Maintenance & Fiabilité (immédiate)
+| Tâche                                                                            | Statut                                                                                  |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Dédupliquer la fonction `fetch`                                                  | ✅ Fait — `core/http_client.py` centralise désormais `fetch`                             |
+| Refactoriser les scripts d’exécution (`multi_scrap.py`, `run_google_scraper.py`) | ✅ Fait — `multi_scrap.py` est un runner testable avec `run_all()`                       |
+| Renforcer la couverture de tests unitaires                                       | ⚠️ Partiellement — tests unitaires existants mais coverage < 70% pour certains scrapers |
+| Centraliser les logs                                                             | ✅ Fait — tous les modules utilisent `core/logger`                                       |
+| Isoler les fonctions de parsing                                                  | ✅ Fait — tout le parsing HTML/JSON est dans `core/parser`                               |
+
+---
+
+## 🟠 PRIORITÉ 2 — Qualité de code & Outils
+| Tâche                                               | Statut                                                                                                     |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Introduire le typage statique                       | ✅ Fait — tous les scrapers et `multi_scrap.py` typés avec `typing`                                         |
+| Mettre en place le linting & formatting automatique | ⚠️ Partiellement — config `pyproject.toml` prête, mais Windows Powershell bloque parfois `mypy` et `black` |
+| Créer `requirements-dev.txt`                        | ✅ Fait — contient `pytest`, `requests-mock`, `black`, `ruff`, `mypy`, `pytest-cov`                         |
+| Configurer la CI/CD (GitHub Actions)                | ⚠️ À faire — workflow `.github/workflows/ci.yml` à finaliser                                               |
+| Mesurer la couverture de tests (pytest-cov)         | ⚠️ À faire — viser 70%+ ; configuration pytest.ini suggérée mais coverage réelle à vérifier                |
+
+---
+
+## 🟡 PRIORITÉ 3 — Architecture & Scalabilité
+| Tâche                                                   | Statut                                                            |
+| ------------------------------------------------------- | ----------------------------------------------------------------- |
+| Introduire une Scraper Factory                          | ✅ Fait                                                        |
+| Créer une classe `ScraperRunner`                        | ✅ Fait  — multi-thread et reporting uniforme à prévoir         |
+| Centraliser la configuration globale (`core/config.py`) | ✅ Fait                                                         |
+| Isoler la configuration externe (.env)                  | ✅ Fait — scrapers ne font plus `os.getenv` directement            |
+| Ajouter un mode “offline test” (cache)                  | ✅ Fait — `JSONCache` fonctionnel et intégré dans `multi_scrap.py` |
+
+
+---
+
+## 🟢 PRIORITÉ 4 — Documentation & Packaging
+| Tâche                          | Statut                                                   |
+| ------------------------------ | -------------------------------------------------------- |
+| Créer `pyproject.toml`         | ✅ Fait — contient black, isort, ruff, mypy               |
+| Rédiger `README.md`            | ✅ Fait                                              |
+| Créer `CONTRIBUTING.md`        | ✅ Fait                                               |
+| Nettoyer `requirements.txt`    | ✅ Fait — versions verrouillées, libs inutiles supprimées |
+| Documenter les modules `core/` | ⚠️ À faire — ajouter docstrings détaillées               |
+
+
+---
+
+## ⚙️ BONUS — Optimisations & Évolutivité
+| Tâche                                         | Statut                                          |
+| --------------------------------------------- | ----------------------------------------------- |
+| Ajouter retry/backoff dans `core/http_client` | ⚠️ À faire                                      |
+| Implémenter un cache (SQLite ou JSON)         | ✅ Fait — `JSONCache` utilisé                    |
+| Créer un reporting enrichi (JSON/HTML)        | ⚠️ À faire                                      |
+| Préparer l’API REST (FastAPI/Flask)           | ⚠️ À faire                                      |
+| Renommer fonctions/fichiers incohérents       | ⚠️ À faire — vérification snake_case/PascalCase |
+
+---
+
+## 🧩 PLAN D’ACTION SYNTHÉTIQUE
+| Vague | Objectif | Tâches concernées | Durée estimée |
+|-------|-----------|------------------|----------------|
+| **1️⃣ Vague 1** | Nettoyage & testabilité | 1–5 | ~1 jour | OK
+| **2️⃣ Vague 2** | Outillage qualité | 6–10 | ~2 jours | OK
+| **3️⃣ Vague 3** | Architecture modulaire | 11–15 | ~3 jours |
+| **4️⃣ Vague 4** | Packaging & documentation | 16–20 | ~3 jours |
+| **5️⃣ Bonus** | Scalabilité & API future | 21–25 | libre |
+
+---
+
+✅ **Objectif global** :  
+Code centralisé, testable, typé, extensible et documenté — prêt à accueillir de nouveaux scrapers et une API de consultation.
+
